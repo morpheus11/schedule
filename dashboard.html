@@ -6,7 +6,8 @@
     <title>Dashboard</title>
     <!-- Bootstrap CDN -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <!-- Bootstrap Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
@@ -183,13 +184,13 @@
             window.location.href = "index.html";  // Redirect to login page
         };
 
-        function sendFormData() {
+      function sendFormData() {
     const formData = {};
-    const scheduleForm = document.getElementById('schedule-form');
-    const dateFields = scheduleForm.querySelectorAll('[name^=date-]');
-    const locationFields = scheduleForm.querySelectorAll('[name^=location-]');
+    const scheduleForm = $('#schedule-form');
+    const dateFields = scheduleForm.find('[name^=date-]');
+    const locationFields = scheduleForm.find('[name^=location-]');
 
-    dateFields.forEach((dateField, index) => {
+    dateFields.each((index, dateField) => {
         const locationField = locationFields[index];
         if (dateField.value && locationField.value) {  // Check if both fields have values
             const count = index + 1;  // Start counting from 1
@@ -200,16 +201,20 @@
 
     console.log("Sending Data:", formData);
 
-    fetch("https://script.google.com/macros/s/AKfycbz-hiAmmw3lFmj0Ud2mT1jNhojvX9hZAJmliM7YhCzgHSVS7-vYrQWEfBvQap9TuyhAZQ/exec", {
+    $.ajax({
+        url: "https://script.google.com/macros/s/AKfycbz-hiAmmw3lFmj0Ud2mT1jNhojvX9hZAJmliM7YhCzgHSVS7-vYrQWEfBvQap9TuyhAZQ/exec",
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
+        contentType: "application/json",
+        data: JSON.stringify(formData),
+        success: function(response) {
+            console.log("Response from server:", response);
+            alert("Data sent successfully!");
         },
-        body: JSON.stringify(formData)
-    })
-    .then(response => response.json())
-    .then(data => alert("Data sent successfully!"))
-    .catch(error => alert("Error sending data!"));
+        error: function(xhr, status, error) {
+            console.error("Error sending data:", error);
+            alert("Error sending data: " + error);
+        }
+    });
 }
 
 
