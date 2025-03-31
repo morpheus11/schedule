@@ -6,7 +6,7 @@
     <title>Dashboard</title>
     <!-- Bootstrap CDN -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <!-- Bootstrap Icons CDN -->
@@ -43,6 +43,22 @@
         .input-group-text {
             background-color: #f1f1f1;
         }
+
+
+    .profile-image-container {
+        display: inline-block;
+        padding: 3px;
+        border: 3px solid #cbc1c1; /* Blue border */
+        border-radius: 50%; /* Makes the border round */
+        margin: 10px 0;
+    }
+
+    #profile-image {
+        width: 100px;
+        height: 100px;
+    }
+
+
     </style>
     <script>
                 let datePortCount = 1;
@@ -51,14 +67,17 @@
             // Fetch user data from sessionStorage
             const userData = JSON.parse(sessionStorage.getItem('userData'));  // Retrieve the user data from sessionStorage
 
-            if (userData && userData.username) {
+            if (userData && userData.name) {
                 // Populate the username element with the user's name
-                document.getElementById('username').textContent = userData.username;
+                document.getElementById('username').textContent = userData.name;
             } else {
                 alert("No user data found! Please log in.");
                 window.location.href = "index.html"; // Redirect if no user data is found
             }
-
+// Get the vessel image ID from session storage and update the image URL
+    const imageId = userData?.vslImage ; // Fallback to default image
+    const imageUrl = `https://static.vesselfinder.net/ship-photo/${imageId}/1?v1`;
+    document.getElementById('profile-image').src = imageUrl;
             // Variable to track the number of date/port pairs
             let datePortCount = 1;
 
@@ -184,7 +203,7 @@
             window.location.href = "index.html";  // Redirect to login page
         };
 
-      function sendFormData() {
+   function sendFormData() {
     const formData = {};
     const scheduleForm = $('#schedule-form');
     const dateFields = scheduleForm.find('[name^=date-]');
@@ -192,38 +211,72 @@
 
     dateFields.each((index, dateField) => {
         const locationField = locationFields[index];
-        if (dateField.value && locationField.value) {  // Check if both fields have values
-            const count = index + 1;  // Start counting from 1
-            formData[`date${count}`] = dateField.value;
+        if (dateField && dateField.value && locationField && locationField.value) {
+            const count = index + 1;
+
+            // Convert date to dd-mm-yyyy format
+            const dateObj = new Date(dateField.value);
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+            const year = dateObj.getFullYear();
+            const formattedDate = `${day}-${month}-${year}`;
+
+            formData[`date${count}`] = formattedDate;
             formData[`port${count}`] = locationField.value;
+
+            console.log(`Field Pair ${count}:`, formattedDate, locationField.value); // Debug
+        } else {
+            console.warn(`Missing data at index ${index}:`, dateField, locationField); // Debug
         }
     });
 
-    console.log("Sending Data:", formData);
+    // Add additional data from sessionStorage
+    const userData = JSON.parse(sessionStorage.getItem("userData"));
+
+
+    // Add fileId from sessionStorage if it exists
+    const fileId = userData.fileId;
+    if (fileId) {
+        formData["fileId"] = fileId;
+    }
+
+    console.log("Sending Data:", JSON.stringify(formData));
 
     $.ajax({
         url: "https://script.google.com/macros/s/AKfycbz-hiAmmw3lFmj0Ud2mT1jNhojvX9hZAJmliM7YhCzgHSVS7-vYrQWEfBvQap9TuyhAZQ/exec",
         method: "POST",
-        contentType: "application/json",
+        headers: {
+            // Matching the curl command
+        },
         data: JSON.stringify(formData),
         success: function(response) {
             console.log("Response from server:", response);
             alert("Data sent successfully!");
         },
         error: function(xhr, status, error) {
-            console.error("Error sending data:", error);
+            console.error("Error sending data:", error, xhr.responseText);
             alert("Error sending data: " + error);
         }
     });
 }
+
+;
+
+
 
 
     </script>
 </head>
 <body>
     <div class="dashboard-container">
-        <h2 id="welcome-msg" class="text-center">Welcome!</h2>
-        <p>Username: <span id="username"></span></p>
+
+<h2 id="welcome-msg" class="text-center">Welcome!</h2>
+<div class="profile-image-container">
+    <img id="profile-image" src="" alt="Profile" class="rounded-circle">
+</div>
+<p>Vessel Name: <span id="username"></span></p>
+
+
         <p>More user details can be shown here.</p>
         <button class="btn btn-danger" onclick="logout()">Logout</button>
 
