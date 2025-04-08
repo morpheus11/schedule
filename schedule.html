@@ -18,9 +18,22 @@
       border-radius: 50%;
       border: 2px solid #dee2e6;
     }
+    #loadingOverlay {
+  transition: opacity 0.5s ease;
+}
+#loadingOverlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
   </style>
 </head>
 <body>
+  <!-- Loading Spinner -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white" style="z-index: 1050;">
+  <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
   <div class="container my-4">
     <h1 class="mb-4 text-center"><i class="bi bi-ship"></i> Ship Schedules</h1>
 
@@ -45,59 +58,62 @@
     });
 
     function runAfterSuccess(updatedUserData) {
-      console.log("Post-success logic with merged userData:", updatedUserData);
-      const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-      const container = document.getElementById('shipsContainer');
+  console.log("Post-success logic with merged userData:", updatedUserData);
+  document.getElementById('loadingOverlay').classList.add('hidden'); // Hide loading
 
-      if (!userData.ships || userData.ships.length === 0) {
-        container.innerHTML = '<div class="alert alert-warning">No ships available.</div>';
-        return;
-      }
+  const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+  const container = document.getElementById('shipsContainer');
 
-      userData.ships.forEach((ship) => {
-        const shipCard = document.createElement('div');
-        shipCard.className = 'col-md-6';
+  if (!userData.ships || userData.ships.length === 0) {
+    container.innerHTML = '<div class="alert alert-warning">No ships available.</div>';
+    return;
+  }
 
-        const portsHTML = ship.ports_of_call.map(port => `
-          <tr>
-            <td><i class="bi bi-geo-alt text-primary me-1"></i>${port.port_name}</td>
-            <td><i class="bi bi-calendar-check me-1"></i>${port.arrival_date}</td>
-            <td><i class="bi bi-calendar-x me-1"></i>${port.departure_date}</td>
-          </tr>
-        `).join('');
+  userData.ships.forEach((ship) => {
+    const shipCard = document.createElement('div');
+    shipCard.className = 'col-md-6';
 
-        shipCard.innerHTML = `
-          <div class="card h-100 shadow-sm">
-            <div class="card-body">
-              <div class="d-flex align-items-center mb-3">
-                <img src="${ship.image_url}" alt="${ship.ship_name}" class="ship-image me-3">
-                <div>
-                  <h5 class="card-title mb-1">${ship.ship_name}</h5>
-                  <small class="text-muted d-block">Voyage: ${ship.voyage_name}</small>
-                  <small class="text-muted">Ship No: ${ship.ship_number} | Voyage No: ${ship.voyage_number}</small>
-                </div>
-              </div>
-              <div class="table-responsive">
-                <table class="table table-bordered table-sm">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Port</th>
-                      <th>Arrival</th>
-                      <th>Departure</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${portsHTML}
-                  </tbody>
-                </table>
-              </div>
+    const portsHTML = ship.ports_of_call.map(port => `
+      <tr>
+        <td><i class="bi bi-geo-alt text-primary me-1"></i>${port.port_name}</td>
+        <td><i class="bi bi-calendar-check me-1"></i>${port.arrival_date}</td>
+        <td><i class="bi bi-calendar-x me-1"></i>${port.departure_date}</td>
+      </tr>
+    `).join('');
+
+    shipCard.innerHTML = `
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <img src="${ship.image_url}" alt="${ship.ship_name}" class="ship-image me-3">
+            <div>
+              <h5 class="card-title mb-1">${ship.ship_name}</h5>
+              <small class="text-muted d-block">Voyage: ${ship.voyage_name}</small>
+              <small class="text-muted">Ship No: ${ship.ship_number} | Voyage No: ${ship.voyage_number}</small>
             </div>
           </div>
-        `;
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>Port</th>
+                  <th>Arrival</th>
+                  <th>Departure</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${portsHTML}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
 
-        container.appendChild(shipCard);
-      });
-    }
+    container.appendChild(shipCard);
+  });
+}
+
 
     window.onload = function () {
       const userDataRaw = sessionStorage.getItem("userData");
