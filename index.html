@@ -1,80 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Form</title>
-    <!-- Bootstrap CDN -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <style>
-        body { 
-            background: url('https://marketplace.canva.com/EAFMoPta66Q/1/0/1600w/canva-black-and-white-mountains-desktop-wallpaper-RV-gcVciSZw.jpg') no-repeat center center fixed;
+  <meta charset="UTF-8" />
+  <title>Ship Schedules</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: #8b8383;
-        }
-        .login-container {
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-		.icon {
-            width: 40px;
-            height: 40px;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-    </style>
-    <script>
-        
-    function encodeAndSubmit(event) {
-        event.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        const combinedString = btoa(username + ':' + password);
-        const form = event.target;
-        const formData = new FormData();
-        formData.append('hash', combinedString);
+  <meta property="og:title" content="Ship Schedule and Vessel Voyage Information">
+  <meta property="og:description" content="Get the latest schedules and voyage details for MV COE LUISA, MV COE KAETHE, MV JENNIFER, and more. Track arrival and departure times for key ports across the globe.">
+  <meta property="og:image" content="http://reporting.shipsnavo.de/schedule/image.jpg">
+  <meta property="og:url" content="http://reporting.shipsnavo.de/schedule/">
+  <meta property="og:type" content="website">
 
-        fetch(form.action, { method: 'POST', body: formData })
-            .then(response => response.json())
-            .then(data => {
-                if (data.auth === "true") {
-                    // Redirect to another form page and pass data through URL or session storage
-                    sessionStorage.setItem('userData', JSON.stringify(data));
-                    window.location.href = data.logonPage;
-                } else {
-                    alert("Authentication failed!");
-                }
-            })
-            .catch(error => console.error("Error:", error));
+
+
+
+  
+  <link rel="shortcut icon" href="https://media.flaticon.com/dist/min/img/favicon.ico">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <style>
+    .ship-image {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid #dee2e6;
     }
-</script>
 
-    </script>
+    #loadingOverlay {
+      transition: opacity 0.5s ease;
+    }
+
+    #loadingOverlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2 class="text-center"><img src="https://www.svgrepo.com/show/295699/lifebuoy-help.svg" class="icon" alt="Lifebuoy Icon"> Login Form</h2>
-        <form action="https://script.google.com/macros/s/AKfycbyo-yC5O7TeldI8VgFEwx58a4gzAdiqi3DQ_EUwcl1TG5qmA8Pk6jyMf7sIaTBo146a/exec" method="POST" onsubmit="encodeAndSubmit(event)">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="Enter Username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
-        </form>
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white" style="z-index: 1050;">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Loading...</span>
     </div>
+  </div>
+
+  <div class="container my-4">
+    <h1 class="mb-4 text-center"><i class="bi bi-ship"></i> Ship Schedules</h1>
+
+    <!-- Logout/Login Button -->
+    <div class="text-end mb-3">
+      <button id="logoutButton" class="btn btn-primary">
+        <i class="bi bi-box-arrow-right"></i> Login
+      </button>
+    </div>
+
+    <div id="shipsContainer" class="row gy-4"></div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Handle Logout/Login
+      document.getElementById("logoutButton").addEventListener("click", () => {
+        sessionStorage.removeItem("userData");
+        window.location.href = 'login.html';
+      });
+
+      // Initial Fetch
+      const userData = {
+        bulkUserSearch: "fileId",
+        bulkFileId: "1TnJIZUDbIWlDy-xM751q8ZEPInEKhUSF"
+      };
+
+      const url = "https://script.google.com/macros/s/AKfycbwyj2UbNx42-x1_XH7qhu58OXMP5a1FnpHOd2IbJ6_06fvtFrf96DkksL7r5cOK4Z2TkA/exec";
+
+      fetch(url, {
+        method: "POST",
+        body: JSON.stringify(userData)
+      })
+        .then(response => {
+          if (!response.ok) throw new Error("Network error");
+          return response.json();
+        })
+        .then(serverData => {
+          const mergedData = { ...userData, ...serverData };
+          sessionStorage.setItem("userData", JSON.stringify(mergedData));
+          renderShipData(mergedData);
+        })
+        .catch(err => {
+          console.error("Failed to update userData:", err);
+        });
+    });
+
+    function renderShipData(userData) {
+      console.log("Rendering ship data:", userData);
+      document.getElementById('loadingOverlay').classList.add('hidden');
+
+      const container = document.getElementById('shipsContainer');
+      if (!userData.ships || userData.ships.length === 0) {
+        container.innerHTML = '<div class="alert alert-warning">No ships available.</div>';
+        return;
+      }
+
+      container.innerHTML = ''; // Clear previous content
+
+      userData.ships.forEach(ship => {
+        const shipCard = document.createElement('div');
+        shipCard.className = 'col-md-6';
+
+        const portsHTML = ship.ports_of_call.map(port => `
+          <tr>
+            <td><i class="bi bi-geo-alt text-primary me-1"></i>${port.port_name}</td>
+            <td><i class="bi bi-calendar-check me-1"></i>${port.arrival_date}</td>
+            <td><i class="bi bi-calendar-x me-1"></i>${port.departure_date}</td>
+          </tr>
+        `).join('');
+
+        shipCard.innerHTML = `
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <img src="${ship.image_url}" alt="${ship.ship_name}" class="ship-image me-3">
+                <div>
+                  <h5 class="card-title mb-1">${ship.ship_name}</h5>
+                  <small class="text-muted d-block">Voyage: ${ship.voyage_name}</small>
+                  <small class="text-muted">Ship No: ${ship.ship_number} | Voyage No: ${ship.voyage_number}</small>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Port</th>
+                      <th>Arrival</th>
+                      <th>Departure</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${portsHTML}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(shipCard);
+      });
+
+      // Run highlighting logic after rendering
+      runAfterRender(highlightCurrentPorts);
+    }
+
+    function runAfterRender(callback) {
+      setTimeout(() => {
+        console.log("Post-render actions completed.");
+        if (typeof callback === "function") callback();
+      }, 200); // Minimal timeout to ensure DOM is rendered
+    }
+
+    function highlightCurrentPorts() {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const rows = document.querySelectorAll('#shipsContainer table tbody tr');
+
+      rows.forEach(row => {
+        const arrival = row.children[1]?.textContent.trim().match(/\d{4}-\d{2}-\d{2}/)?.[0];
+        const departure = row.children[2]?.textContent.trim().match(/\d{4}-\d{2}-\d{2}/)?.[0];
+
+        if (arrival && departure) {
+          const arrivalDate = new Date(arrival);
+          const departureDate = new Date(departure);
+          const currentDate = new Date(today);
+
+          if (currentDate >= arrivalDate && currentDate <= departureDate) {
+            row.classList.add('table-success');
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
